@@ -148,6 +148,12 @@ class SourceSalesforce(ConcurrentSourceAdapter):
             "authenticator": authenticator,
             "start_date": config.get("start_date"),
         }
+        
+        stream_filters = config.get("stream_filters")
+        if stream_filters is not None:
+            for filter in stream_filters:            
+                if filter["stream_name"] == stream_name:
+                    stream_kwargs["stream_filter"] = filter["filter_value"]
 
         api_type = cls._get_api_type(stream_name, json_schema, config.get("force_use_bulk_api", False))
         full_refresh, incremental = cls._get_stream_type(stream_name, api_type)
