@@ -210,6 +210,7 @@ class RestSalesforceStream(SalesforceStream):
         if self.primary_key and self.name not in UNSUPPORTED_FILTERING_STREAMS:
             query += f"ORDER BY {self.primary_key} ASC"
 
+        self.logger.warning(f"Used SOQL query {query}")
         return {"q": query}
 
     def chunk_properties(self) -> Iterable[Mapping[str, Any]]:
@@ -615,7 +616,8 @@ class BulkSalesforceStream(SalesforceStream):
 
         if where_conditions:
             query += f" WHERE {' AND '.join(where_conditions)}"
-
+       
+        self.logger.warning(f"Used SOQL query {query}")
         return {"q": query}
 
     def read_records(
@@ -779,6 +781,7 @@ class IncrementalRestSalesforceStream(RestSalesforceStream, CheckpointMixin, ABC
 
         where_clause = f"WHERE {' AND '.join(where_conditions)}"
         query = f"SELECT {select_fields} FROM {table_name} {where_clause}"
+        self.logger.warning(f"Used SOQL query {query}")
 
         return {"q": query}
 
@@ -827,6 +830,8 @@ class BulkIncrementalSalesforceStream(BulkSalesforceStream, IncrementalRestSales
 
         where_clause = f"WHERE {' AND '.join(where_conditions)}"
         query = f"SELECT {select_fields} FROM {table_name} {where_clause}"
+
+        self.logger.warning(f"Used SOQL query {query}")
         return {"q": query}
 
 
