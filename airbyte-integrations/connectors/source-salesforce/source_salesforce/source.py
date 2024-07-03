@@ -186,7 +186,6 @@ class SourceSalesforce(ConcurrentSourceAdapter):
                     if stream_name == catalog_stream.stream.name and catalog_stream.stream.json_schema.get("properties", {}):
                         json_schema['properties'] = catalog_stream.stream.json_schema.get("properties", {})
 
-            logger.warning(f"JSON schema used for the stream {stream_name}: {json_schema}")
             stream_class, kwargs = self.prepare_stream(stream_name, json_schema, sobject_options, *default_args)
 
             parent_name = PARENT_SALESFORCE_OBJECTS.get(stream_name, {}).get("parent_name")
