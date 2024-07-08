@@ -63,6 +63,7 @@ class SalesforceStream(HttpStream, ABC):
         sobject_options: Mapping[str, Any] = None,
         schema: dict = None,
         start_date=None,
+        stream_filter: str = "",
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -78,6 +79,7 @@ class SalesforceStream(HttpStream, ABC):
             session=self._session,  # no need to specific api_budget and authenticator as HttpStream sets them in self._session
             error_handler=SalesforceErrorHandler(stream_name=self.stream_name, sobject_options=self.sobject_options),
         )
+        self.stream_filter = stream_filter
 
     @staticmethod
     def format_start_date(start_date: Optional[str]) -> Optional[str]:
@@ -190,12 +192,19 @@ class RestSalesforceStream(SalesforceStream):
 
         property_chunk = property_chunk or {}
         query = f"SELECT {','.join(property_chunk.keys())} FROM {self.name} "
+        where_conditions = []
 
         if self.name in PARENT_SALESFORCE_OBJECTS:
             # add where clause: " WHERE ContentDocumentId IN ('06905000000NMXXXXX', ...)"
             parent_field = PARENT_SALESFORCE_OBJECTS[self.name]["field"]
             parent_ids = [f"'{parent_record[parent_field]}'" for parent_record in stream_slice["parents"]]
-            query += f" WHERE ContentDocumentId IN ({','.join(parent_ids)})"
+            where_conditions.append(f"ContentDocumentId IN ({','.join(parent_ids)})")
+
+        if self.stream_filter:
+            where_conditions.append(f"{self.stream_filter}")
+
+        if where_conditions:
+            query += f" WHERE {' AND '.join(where_conditions)}"
 
         if self.primary_key and self.name not in UNSUPPORTED_FILTERING_STREAMS:
             query += f"ORDER BY {self.primary_key} ASC"
@@ -204,7 +213,6 @@ class RestSalesforceStream(SalesforceStream):
 
     def chunk_properties(self) -> Iterable[Mapping[str, Any]]:
         selected_properties = self.get_json_schema().get("properties", {})
-
         def empty_props_with_pk_if_present():
             return {self.primary_key: selected_properties[self.primary_key]} if self.primary_key else {}
 
@@ -589,13 +597,21 @@ class BulkSalesforceStream(SalesforceStream):
         query = f"SELECT {select_fields} FROM {self.name}"
         if next_page_token:
             query += next_page_token["next_token"]
+       
+        where_conditions = []
 
         if self.name in PARENT_SALESFORCE_OBJECTS:
             # add where clause: " WHERE ContentDocumentId IN ('06905000000NMXXXXX', '06905000000Mxp7XXX', ...)"
             parent_field = PARENT_SALESFORCE_OBJECTS[self.name]["field"]
             parent_ids = [f"'{parent_record[parent_field]}'" for parent_record in stream_slice["parents"]]
-            query += f" WHERE ContentDocumentId IN ({','.join(parent_ids)})"
+            where_conditions.append(f"ContentDocumentId IN ({','.join(parent_ids)})")
+       
+        if self.stream_filter:
+            where_conditions.append(f"{self.stream_filter}")
 
+        if where_conditions:
+            query += f" WHERE {' AND '.join(where_conditions)}"
+       
         return {"q": query}
 
     def read_records(
@@ -696,12 +712,14 @@ class IncrementalRestSalesforceStream(RestSalesforceStream, CheckpointMixin, ABC
     state_checkpoint_interval = 500
     _slice = None
 
-    def __init__(self, replication_key: str, stream_slice_step: str = "P30D", **kwargs):
+    def __init__(self, replication_key: str, stream_slice_step: str = "P30D", stream_filter: str = "", **kwargs):
         super().__init__(**kwargs)
         self.replication_key = replication_key
         self._stream_slice_step = stream_slice_step
         self._stream_slicer_cursor = None
         self._state = {}
+        self.stream_filter = stream_filter
+
 
     def set_cursor(self, cursor: Cursor) -> None:
         self._stream_slicer_cursor = cursor
@@ -752,6 +770,8 @@ class IncrementalRestSalesforceStream(RestSalesforceStream, CheckpointMixin, ABC
             where_conditions.append(f"{self.cursor_field} >= {start_date}")
         if end_date:
             where_conditions.append(f"{self.cursor_field} < {end_date}")
+        if self.stream_filter:
+            where_conditions.append(f"{self.stream_filter}")
 
         where_clause = f"WHERE {' AND '.join(where_conditions)}"
         query = f"SELECT {select_fields} FROM {table_name} {where_clause}"
@@ -798,8 +818,12 @@ class BulkIncrementalSalesforceStream(BulkSalesforceStream, IncrementalRestSales
         table_name = self.name
         where_conditions = [f"{self.cursor_field} >= {start_date}", f"{self.cursor_field} < {end_date}"]
 
+        if self.stream_filter:
+            where_conditions.append(f"{self.stream_filter}")
+
         where_clause = f"WHERE {' AND '.join(where_conditions)}"
         query = f"SELECT {select_fields} FROM {table_name} {where_clause}"
+
         return {"q": query}
 
 
