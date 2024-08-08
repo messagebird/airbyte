@@ -54,6 +54,8 @@ definitions:
           $ref: "#/definitions/base_requester"
           path: /contacts
           http_method: GET
+          request_parameters:
+            tagid: "{{ config['tag_id_filter'] }}"
         record_selector:
           type: RecordSelector
           extractor:
@@ -251,6 +253,9 @@ spec:
         type: string
         description: Account Username
         order: 1
+      tag_id_filter:
+        type: string
+        description: Tag ID Filter
     additionalProperties: true
 
 metadata:
