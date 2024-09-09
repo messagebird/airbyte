@@ -101,6 +101,21 @@ connectionSpecification:
             order: 2
       title: Filter Salesforce Objects
       description: Add filters to select only required stream based on `SObject` name. Use this field to filter which tables are displayed by this connector. This is useful if your Salesforce account has a large number of tables (>1000), in which case you may find it easier to navigate the UI and speed up the connector's performance if you restrict the tables displayed by this connector.
+    stream_filters:
+      description: Add filters to sync only required records based on `SObject` name and available `SObject` attributes.
+      type: array
+      order: 9
+      items:
+        type: object
+        properties:
+          stream_name:
+            type: string
+            title: Stream Name
+            order: 1
+          filter_value:
+            type: string
+            title: Filter expression
+            order: 2
 advanced_auth:
   auth_flow_type: oauth2.0
   predicate_key:

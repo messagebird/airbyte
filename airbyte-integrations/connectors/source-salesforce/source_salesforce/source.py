@@ -147,6 +147,12 @@ class SourceSalesforce(ConcurrentSourceAdapter):
             "authenticator": authenticator,
             "start_date": config.get("start_date"),
         }
+        
+        stream_filters = config.get("stream_filters")
+        if stream_filters is not None:
+            for filter in stream_filters:            
+                if filter["stream_name"] == stream_name:
+                    stream_kwargs["stream_filter"] = filter["filter_value"]
 
         api_type = cls._get_api_type(stream_name, json_schema, config.get("force_use_bulk_api", False))
         full_refresh, incremental = cls._get_stream_type(stream_name, api_type)
@@ -173,6 +179,11 @@ class SourceSalesforce(ConcurrentSourceAdapter):
         state_manager = ConnectorStateManager(stream_instance_map={s.name: s for s in streams}, state=self.state)
         for stream_name, sobject_options in stream_objects.items():
             json_schema = schemas.get(stream_name, {})
+
+            if self.catalog:
+                for catalog_stream in self.catalog.streams:
+                    if stream_name == catalog_stream.stream.name and catalog_stream.stream.json_schema.get("properties", {}):
+                        json_schema['properties'] = catalog_stream.stream.json_schema.get("properties", {})
 
             stream_class, kwargs = self.prepare_stream(stream_name, json_schema, sobject_options, *default_args)
 
