@@ -129,6 +129,11 @@ class SourceHubspot(AbstractSource):
         api = self.get_api(config=config)
         # Additional configuration is necessary for testing certain streams due to their specific restrictions.
         acceptance_test_config = config.get("acceptance_test_config", {})
+
+        stream_filters = "stream_filters" in config and config["stream_filters"]
+        if stream_filters:
+            return dict(api=api, start_date=start_date, credentials=credentials, acceptance_test_config=acceptance_test_config, stream_filters=stream_filters)
+
         return dict(api=api, start_date=start_date, credentials=credentials, acceptance_test_config=acceptance_test_config)
 
     def streams(self, config: Mapping[str, Any]) -> List[Stream]:

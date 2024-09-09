@@ -1106,11 +1106,20 @@ class CRMSearchStream(IncrementalStream, ABC):
     def __init__(
         self,
         include_archived_only: bool = False,
+        stream_filters: Mapping[str, Any] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self._state = None
         self._include_archived_only = include_archived_only
+        self._stream_filter = None
+        
+        # Filter for records
+        if stream_filters is None:
+            stream_filters = {}
+        for filter in stream_filters:
+            if filter["stream_name"] == self.name:
+                self._stream_filter = filter["filter_value"] 
 
     @retry_connection_handler(max_tries=5, factor=5)
     @retry_after_handler(fixed_retry_after=1, max_tries=3)
@@ -1141,6 +1150,18 @@ class CRMSearchStream(IncrementalStream, ABC):
             if self.state
             else {}
         )
+
+        if self._stream_filter:
+            for filter_item in self._stream_filter:
+                filter_value = filter_item.get("filter_value", {})
+                if "propertyName" in filter_value and "operator" in filter_value and "value" in filter_value:
+                    payload["filters"].append({
+                        "propertyName": filter_value["propertyName"],
+                        "operator": filter_value["operator"],
+                        "value": filter_value["value"],
+                    })
+                logger.info(f"I've got PAYLOAD: {payload}")
+
         if next_page_token:
             payload.update(next_page_token["payload"])
 
