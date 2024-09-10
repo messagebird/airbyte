@@ -386,12 +386,14 @@ class Stream(HttpStream, ABC):
         api: API,
         start_date: Union[str, pendulum.datetime],
         credentials: Mapping[str, Any] = None,
+        stream_filters: Mapping[str, Any] = None,
         acceptance_test_config: Mapping[str, Any] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self._api: API = api
         self._credentials = credentials
+        self._stream_filter = None
 
         self._start_date = start_date
         if isinstance(self._start_date, str):
@@ -408,6 +410,13 @@ class Stream(HttpStream, ABC):
             acceptance_test_config = {}
         self._is_test = self.name in acceptance_test_config
         self._acceptance_test_config = acceptance_test_config.get(self.name, {})
+
+        # Filter for records
+        if stream_filters is None:
+            stream_filters = {}
+        for filter in stream_filters:
+            if filter["stream_name"] == self.name:
+                self._stream_filter = filter["filter_value"]
 
     def should_retry(self, response: requests.Response) -> bool:
         if response.status_code == HTTPStatus.UNAUTHORIZED:
@@ -1101,25 +1110,16 @@ class CRMSearchStream(IncrementalStream, ABC):
     @property
     def url(self):
         object_type_id = self.fully_qualified_name or self.entity
-        return f"/crm/v3/objects/{object_type_id}/search" if self.state else f"/crm/v3/objects/{object_type_id}"
+        return f"/crm/v3/objects/{object_type_id}/search"
 
     def __init__(
         self,
         include_archived_only: bool = False,
-        stream_filters: Mapping[str, Any] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self._state = None
         self._include_archived_only = include_archived_only
-        self._stream_filter = None
-        
-        # Filter for records
-        if stream_filters is None:
-            stream_filters = {}
-        for filter in stream_filters:
-            if filter["stream_name"] == self.name:
-                self._stream_filter = filter["filter_value"] 
 
     @retry_connection_handler(max_tries=5, factor=5)
     @retry_after_handler(fixed_retry_after=1, max_tries=3)
@@ -1144,23 +1144,25 @@ class CRMSearchStream(IncrementalStream, ABC):
             {
                 "filters": [{"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}],
                 "sorts": [{"propertyName": self.last_modified_field, "direction": "ASCENDING"}],
-                "properties": properties_list,
+                #"properties": properties_list,
                 "limit": 100,
             }
             if self.state
-            else {}
+            else {
+                "filters": [{"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}],
+                "sorts": [{"propertyName": self.last_modified_field, "direction": "ASCENDING"}],
+                #"properties": properties_list,
+                "limit": 100,
+            }
         )
 
         if self._stream_filter:
-            for filter_item in self._stream_filter:
-                filter_value = filter_item.get("filter_value", {})
-                if "propertyName" in filter_value and "operator" in filter_value and "value" in filter_value:
-                    payload["filters"].append({
-                        "propertyName": filter_value["propertyName"],
-                        "operator": filter_value["operator"],
-                        "value": filter_value["value"],
-                    })
-                logger.info(f"I've got PAYLOAD: {payload}")
+            if "propertyName" in self._stream_filter and "operator" in self._stream_filter and "value" in self._stream_filter:
+                payload["filters"].append({
+                    "propertyName": self._stream_filter["propertyName"],
+                    "operator": self._stream_filter["operator"],
+                    "value": self._stream_filter["value"],
+                })
 
         if next_page_token:
             payload.update(next_page_token["payload"])
@@ -1202,21 +1204,13 @@ class CRMSearchStream(IncrementalStream, ABC):
 
         latest_cursor = None
         while not pagination_complete:
-            if self.state:
-                records, raw_response = self._process_search(
-                    next_page_token=next_page_token,
-                    stream_state=stream_state,
-                    stream_slice=stream_slice,
+            records, raw_response = self._process_search(
+                next_page_token=next_page_token,
+                stream_state=stream_state,
+                stream_slice=stream_slice,
                 )
-                if self.associations:
-                    records = self._read_associations(records)
-            else:
-                records, raw_response = self._read_stream_records(
-                    stream_slice=stream_slice,
-                    stream_state=stream_state,
-                    next_page_token=next_page_token,
-                )
-                records = self._flat_associations(records)
+            if self.associations:
+                records = self._read_associations(records)
             records = self._filter_old_records(records)
             records = self.record_unnester.unnest(records)
 
