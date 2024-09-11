@@ -3,7 +3,988 @@
     {
       "stream": {
         "name": "contacts",
-        "json_schema": {},
+        "json_schema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "properties": {
+            "archived": {
+              "description": "Indicates if the contact is archived or not.",
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "companies": {
+              "description": "List of companies associated with the contact.",
+              "items": {
+                "description": "Details of a company associated with the contact.",
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "type": [
+                "null",
+                "array"
+              ]
+            },
+            "createdAt": {
+              "description": "Date and time when the contact was created.",
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "id": {
+              "description": "Unique identifier for the contact.",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties": {
+              "properties": {
+                "address": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "annualrevenue": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "associatedcompanyid": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "associatedcompanylastupdated": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "city": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "closedate": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "company": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "company_size": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "country": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "createdate": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "currentlyinworkflow": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "date_of_birth": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "days_to_close": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "degree": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "email": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "engagements_last_meeting_booked": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "engagements_last_meeting_booked_campaign": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "engagements_last_meeting_booked_medium": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "engagements_last_meeting_booked_source": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "fax": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "field_of_study": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "firstname": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "first_conversion_date": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "first_conversion_event_name": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "first_deal_created_date": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "gender": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "graduation_date": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "hubspotscore": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "hubspot_owner_assigneddate": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "hubspot_owner_id": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "hubspot_team_id": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "industry": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "ip_city": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "ip_country": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "ip_country_code": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "ip_latlon": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "ip_state": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "ip_state_code": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "ip_zipcode": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "jobtitle": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "job_function": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "lastmodifieddate": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "lastname": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "lifecyclestage": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "marital_status": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "message": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "military_status": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "mobilephone": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "notes_last_contacted": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "notes_last_updated": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "notes_next_activity_date": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "numemployees": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "num_associated_deals": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "num_contacted_notes": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "num_conversion_events": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "num_notes": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "num_unique_conversion_events": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "phone": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "recent_conversion_date": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "recent_conversion_event_name": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "recent_deal_amount": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "recent_deal_close_date": {
+                  "format": "date-time",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "relationship_status": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "salutation": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "school": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "seniority": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "start_date": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "state": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "surveymonkeyeventlastupdated": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "total_revenue": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "twitterhandle": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "webinareventlastupdated": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                },
+                "website": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "work_email": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "zip": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                }
+              },
+              "type": "object"
+            },
+            "properties_address": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_annualrevenue": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_associatedcompanyid": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_associatedcompanylastupdated": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_city": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_closedate": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_company": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_company_size": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_country": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_createdate": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_currentlyinworkflow": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_date_of_birth": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_days_to_close": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_degree": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_email": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_engagements_last_meeting_booked": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_engagements_last_meeting_booked_campaign": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_engagements_last_meeting_booked_medium": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_engagements_last_meeting_booked_source": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_fax": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_field_of_study": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_firstname": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_first_conversion_date": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_first_conversion_event_name": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_first_deal_created_date": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_gender": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_graduation_date": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_hubspotscore": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_hubspot_owner_assigneddate": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_hubspot_owner_id": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_hubspot_team_id": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_industry": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_ip_city": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_ip_country": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_ip_country_code": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_ip_latlon": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_ip_state": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_ip_state_code": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_ip_zipcode": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_jobtitle": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_job_function": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_lastmodifieddate": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_lastname": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_lifecyclestage": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_marital_status": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_message": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_military_status": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_mobilephone": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_notes_last_contacted": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_notes_last_updated": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_notes_next_activity_date": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_numemployees": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_num_associated_deals": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_num_contacted_notes": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_num_conversion_events": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_num_notes": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_num_unique_conversion_events": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_phone": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_recent_conversion_date": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_recent_conversion_event_name": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_recent_deal_amount": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_recent_deal_close_date": {
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_relationship_status": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_salutation": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_school": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_seniority": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_start_date": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_state": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_surveymonkeyeventlastupdated": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_total_revenue": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_twitterhandle": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_webinareventlastupdated": {
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "properties_website": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_work_email": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "properties_zip": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "updatedAt": {
+              "description": "Date and time when the contact was last updated.",
+              "format": "date-time",
+              "type": [
+                "null",
+                "string"
+              ]
+            }
+          },
+          "type": [
+            "null",
+            "object"
+          ]
+        },
         "supported_sync_modes": [
           "full_refresh",
           "incremental"

@@ -387,6 +387,7 @@ class Stream(HttpStream, ABC):
         start_date: Union[str, pendulum.datetime],
         credentials: Mapping[str, Any] = None,
         stream_filters: Mapping[str, Any] = None,
+        catalog: Mapping[str, Any] = None,
         acceptance_test_config: Mapping[str, Any] = None,
         **kwargs,
     ):
@@ -394,6 +395,7 @@ class Stream(HttpStream, ABC):
         self._api: API = api
         self._credentials = credentials
         self._stream_filter = None
+        self.catalog = None
 
         self._start_date = start_date
         if isinstance(self._start_date, str):
@@ -417,6 +419,8 @@ class Stream(HttpStream, ABC):
         for filter in stream_filters:
             if filter["stream_name"] == self.name:
                 self._stream_filter = filter["filter_value"]
+        if catalog:
+            self.catalog = catalog
 
     def should_retry(self, response: requests.Response) -> bool:
         if response.status_code == HTTPStatus.UNAUTHORIZED:
@@ -827,10 +831,16 @@ class Stream(HttpStream, ABC):
                 f"to be able to fetch all properties available."
             )
             return props
-        data, response = self._api.get(f"/properties/v2/{self.entity}/properties")
-        for row in data:
-            props[row["name"]] = self._get_field_props(row["type"])
 
+        if self.catalog:
+            for catalog_stream in self.catalog.streams:
+                if self.name == catalog_stream.stream.name and catalog_stream.stream.json_schema.get("properties", {}):
+                        #properties are nested field
+                        props=catalog_stream.stream.json_schema.get("properties").get("properties").get('properties')
+        else:
+            data, response = self._api.get(f"/properties/v2/{self.entity}/properties")
+            for row in data:
+                props[row["name"]] = self._get_field_props(row["type"])
         return props
 
     def properties_scope_is_granted(self):
