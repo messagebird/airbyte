@@ -5,5 +5,15 @@
     "client_id": "123456789_client_id_hubspot",
     "client_secret": "123456789_client_secret_hubspot",
     "refresh_token": "123456789_some_refresh_token"
-  }
+  },
+  "stream_filters": [
+    {
+      "stream_name": "contacts",
+      "filter_value": {
+        "propertyName": "city",
+        "operator": "EQ",
+        "value": "Madrid"
+      }
+    }
+  ]
 }

@@ -8,8 +8,9 @@ from http import HTTPStatus
 from itertools import chain
 from typing import Any, Generator, List, Mapping, Optional, Tuple, Union
 
-from airbyte_cdk.models import FailureType
+from airbyte_cdk.models import FailureType, ConfiguredAirbyteCatalog
 from airbyte_cdk.sources import AbstractSource
+from airbyte_cdk.sources.source import TState
 from airbyte_cdk.sources.streams import Stream
 from airbyte_cdk.sources.streams.http import HttpClient
 from airbyte_cdk.sources.streams.http.error_handlers import ErrorResolution, HttpStatusErrorHandler, ResponseAction
@@ -78,6 +79,11 @@ DEFAULT_START_DATE = "2006-06-01T00:00:00Z"
 class SourceHubspot(AbstractSource):
     logger = logging.getLogger("airbyte")
 
+    def __init__(self, catalog: Optional[ConfiguredAirbyteCatalog], config: Optional[Mapping[str, Any]], state: Optional[TState], **kwargs):
+        self.catalog = catalog
+        self.state = state
+        self.config = config
+
     def check_connection(self, logger: logging.Logger, config: Mapping[str, Any]) -> Tuple[bool, Optional[Any]]:
         """Check connection"""
         common_params = self.get_common_params(config=config)
@@ -129,11 +135,21 @@ class SourceHubspot(AbstractSource):
         api = self.get_api(config=config)
         # Additional configuration is necessary for testing certain streams due to their specific restrictions.
         acceptance_test_config = config.get("acceptance_test_config", {})
-        return dict(api=api, start_date=start_date, credentials=credentials, acceptance_test_config=acceptance_test_config)
+
+        common_param = dict(api=api, start_date=start_date, credentials=credentials, acceptance_test_config=acceptance_test_config)
+        
+        stream_filters = "stream_filters" in config and config["stream_filters"]
+        if stream_filters:
+            common_param.update(stream_filters=stream_filters)
+
+        if self.catalog:
+            common_param.update(catalog=self.catalog)
+        
+        return common_param
 
     def streams(self, config: Mapping[str, Any]) -> List[Stream]:
-        credentials = config.get("credentials", {})
-        common_params = self.get_common_params(config=config)
+        credentials = self.config.get("credentials", {})
+        common_params = self.get_common_params(config=self.config)
         streams = [
             Campaigns(**common_params),
             Companies(**common_params),
@@ -171,7 +187,7 @@ class SourceHubspot(AbstractSource):
             Workflows(**common_params),
         ]
 
-        enable_experimental_streams = "enable_experimental_streams" in config and config["enable_experimental_streams"]
+        enable_experimental_streams = "enable_experimental_streams" in self.config and self.config["enable_experimental_streams"]
 
         if enable_experimental_streams:
             streams.extend(

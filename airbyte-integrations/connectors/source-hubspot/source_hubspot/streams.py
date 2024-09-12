@@ -386,12 +386,16 @@ class Stream(HttpStream, ABC):
         api: API,
         start_date: Union[str, pendulum.datetime],
         credentials: Mapping[str, Any] = None,
+        stream_filters: Mapping[str, Any] = None,
+        catalog: Mapping[str, Any] = None,
         acceptance_test_config: Mapping[str, Any] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self._api: API = api
         self._credentials = credentials
+        self._stream_filter = None
+        self.catalog = None
 
         self._start_date = start_date
         if isinstance(self._start_date, str):
@@ -408,6 +412,14 @@ class Stream(HttpStream, ABC):
             acceptance_test_config = {}
         self._is_test = self.name in acceptance_test_config
         self._acceptance_test_config = acceptance_test_config.get(self.name, {})
+
+        # Filter for records
+        if stream_filters: 
+            for filter in stream_filters:
+                if filter["stream_name"] == self.name:
+                    self._stream_filter = filter["filter_value"]
+        if catalog:
+            self.catalog = catalog
 
     def should_retry(self, response: requests.Response) -> bool:
         if response.status_code == HTTPStatus.UNAUTHORIZED:
@@ -818,10 +830,16 @@ class Stream(HttpStream, ABC):
                 f"to be able to fetch all properties available."
             )
             return props
-        data, response = self._api.get(f"/properties/v2/{self.entity}/properties")
-        for row in data:
-            props[row["name"]] = self._get_field_props(row["type"])
 
+        if self.catalog:
+            for catalog_stream in self.catalog.streams:
+                if self.name == catalog_stream.stream.name and catalog_stream.stream.json_schema.get("properties", {}):
+                        #properties are nested field
+                        props=catalog_stream.stream.json_schema.get("properties").get("properties").get('properties')
+        else:
+            data, response = self._api.get(f"/properties/v2/{self.entity}/properties")
+            for row in data:
+                props[row["name"]] = self._get_field_props(row["type"])
         return props
 
     def properties_scope_is_granted(self):
@@ -1101,7 +1119,7 @@ class CRMSearchStream(IncrementalStream, ABC):
     @property
     def url(self):
         object_type_id = self.fully_qualified_name or self.entity
-        return f"/crm/v3/objects/{object_type_id}/search" if self.state else f"/crm/v3/objects/{object_type_id}"
+        return f"/crm/v3/objects/{object_type_id}/search"
 
     def __init__(
         self,
@@ -1136,11 +1154,24 @@ class CRMSearchStream(IncrementalStream, ABC):
                 "filters": [{"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}],
                 "sorts": [{"propertyName": self.last_modified_field, "direction": "ASCENDING"}],
                 "properties": properties_list,
-                "limit": 100,
+                "limit": 200,
             }
             if self.state
-            else {}
+            else {
+                "filters": [{"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}],
+                "sorts": [{"propertyName": self.last_modified_field, "direction": "ASCENDING"}],
+                "properties": properties_list,
+                "limit": 200,
+            }
         )
+        if self._stream_filter:
+            if "propertyName" in self._stream_filter and "operator" in self._stream_filter and "value" in self._stream_filter:
+                payload["filters"].append({
+                    "propertyName": self._stream_filter["propertyName"],
+                    "operator": self._stream_filter["operator"],
+                    "value": self._stream_filter["value"],
+                })
+
         if next_page_token:
             payload.update(next_page_token["payload"])
 
@@ -1181,21 +1212,13 @@ class CRMSearchStream(IncrementalStream, ABC):
 
         latest_cursor = None
         while not pagination_complete:
-            if self.state:
-                records, raw_response = self._process_search(
-                    next_page_token=next_page_token,
-                    stream_state=stream_state,
-                    stream_slice=stream_slice,
+            records, raw_response = self._process_search(
+                next_page_token=next_page_token,
+                stream_state=stream_state,
+                stream_slice=stream_slice,
                 )
-                if self.associations:
-                    records = self._read_associations(records)
-            else:
-                records, raw_response = self._read_stream_records(
-                    stream_slice=stream_slice,
-                    stream_state=stream_state,
-                    next_page_token=next_page_token,
-                )
-                records = self._flat_associations(records)
+            if self.associations:
+                records = self._read_associations(records)
             records = self._filter_old_records(records)
             records = self.record_unnester.unnest(records)
 

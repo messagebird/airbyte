@@ -64,6 +64,16 @@ def config_eperimantal_fixture():
     }
 
 
+@pytest.fixture(name="config_with_filters")
+def config_with_filters_fixture():
+    return {
+        "start_date": "2021-01-10T00:00:00Z",
+        "credentials": {"credentials_title": "Private App Credentials", "access_token": "test_access_token"},
+        "enable_experimental_streams": True,
+        "stream_filters": [{"stream_name": "contacts", "filter_value": {"propertyName": "city","operator": "EQ","value": "Madrid"}}],
+    }
+
+
 @pytest.fixture(name="config_invalid_date")
 def config_invalid_date_fixture():
     return {

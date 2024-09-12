@@ -91,6 +91,29 @@ connectionSpecification:
       description: If enabled then experimental streams become available for sync.
       type: boolean
       default: false
+    stream_filters:
+      title: Filters
+      description: Filters to apply to the data streams
+      type: array
+      items:
+        type: object
+        properties:
+          stream_name:
+            type: string
+            title: Stream Name
+          filter_value:
+            type: object
+            title: Filter expression
+            properties:
+              propertyName:
+                type: string
+                title: Property Name
+              operator:
+                type: string
+                title: Operator
+              value:
+                type: string
+                title: Value
 advanced_auth:
   auth_flow_type: oauth2.0
   predicate_key:
