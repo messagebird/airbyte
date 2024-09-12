@@ -414,11 +414,10 @@ class Stream(HttpStream, ABC):
         self._acceptance_test_config = acceptance_test_config.get(self.name, {})
 
         # Filter for records
-        if stream_filters is None:
-            stream_filters = {}
-        for filter in stream_filters:
-            if filter["stream_name"] == self.name:
-                self._stream_filter = filter["filter_value"]
+        if stream_filters: 
+            for filter in stream_filters:
+                if filter["stream_name"] == self.name:
+                    self._stream_filter = filter["filter_value"]
         if catalog:
             self.catalog = catalog
 
@@ -1155,17 +1154,16 @@ class CRMSearchStream(IncrementalStream, ABC):
                 "filters": [{"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}],
                 "sorts": [{"propertyName": self.last_modified_field, "direction": "ASCENDING"}],
                 "properties": properties_list,
-                "limit": 100,
+                "limit": 200,
             }
             if self.state
             else {
                 "filters": [{"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}],
                 "sorts": [{"propertyName": self.last_modified_field, "direction": "ASCENDING"}],
                 "properties": properties_list,
-                "limit": 100,
+                "limit": 200,
             }
         )
-
         if self._stream_filter:
             if "propertyName" in self._stream_filter and "operator" in self._stream_filter and "value" in self._stream_filter:
                 payload["filters"].append({

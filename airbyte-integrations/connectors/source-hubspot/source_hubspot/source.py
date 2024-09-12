@@ -82,6 +82,7 @@ class SourceHubspot(AbstractSource):
     def __init__(self, catalog: Optional[ConfiguredAirbyteCatalog], config: Optional[Mapping[str, Any]], state: Optional[TState], **kwargs):
         self.catalog = catalog
         self.state = state
+        self.config = config
 
     def check_connection(self, logger: logging.Logger, config: Mapping[str, Any]) -> Tuple[bool, Optional[Any]]:
         """Check connection"""
@@ -147,8 +148,8 @@ class SourceHubspot(AbstractSource):
         return common_param
 
     def streams(self, config: Mapping[str, Any]) -> List[Stream]:
-        credentials = config.get("credentials", {})
-        common_params = self.get_common_params(config=config)
+        credentials = self.config.get("credentials", {})
+        common_params = self.get_common_params(config=self.config)
         streams = [
             Campaigns(**common_params),
             Companies(**common_params),
@@ -186,7 +187,7 @@ class SourceHubspot(AbstractSource):
             Workflows(**common_params),
         ]
 
-        enable_experimental_streams = "enable_experimental_streams" in config and config["enable_experimental_streams"]
+        enable_experimental_streams = "enable_experimental_streams" in self.config and self.config["enable_experimental_streams"]
 
         if enable_experimental_streams:
             streams.extend(
