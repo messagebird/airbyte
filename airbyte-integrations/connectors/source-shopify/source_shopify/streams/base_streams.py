@@ -143,6 +143,7 @@ class ShopifyDeletedEventsStream(ShopifyStream):
             yield {
                 "id": event["subject_id"],
                 self.cursor_field: event["created_at"],
+                "updated_at": event["created_at"],
                 "deleted_message": event.get("message", None),
                 "deleted_description": event.get("description", None),
                 "shop_url": event["shop_url"],
