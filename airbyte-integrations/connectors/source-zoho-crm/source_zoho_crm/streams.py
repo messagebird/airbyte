@@ -11,6 +11,7 @@ from http import HTTPStatus
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional
 
 import requests
+from airbyte_cdk.entrypoint import logger
 from airbyte_cdk.sources.streams.http import HttpStream
 
 from .api import ZohoAPI
@@ -109,14 +110,20 @@ class ZohoStreamFactory:
         self._config = config
 
     def _init_modules_meta(self) -> List[ModuleMeta]:
-        modules_meta_json = self.api.modules_settings()
+        contacts_modules_meta_json = self.api.module_settings("Contacts")
+        leads_modules_meta_json = self.api.module_settings("Leads")
+
+        modules_meta_json = contacts_modules_meta_json + leads_modules_meta_json
         modules = [ModuleMeta.from_dict(module) for module in modules_meta_json]
-        return list(filter(lambda module: module.api_supported, modules))
+        return list(filter(lambda module: module.api_name == "Contacts" or module.api_name == "Leads", modules))
 
     def _populate_fields_meta(self, module: ModuleMeta):
         fields_meta_json = self.api.fields_settings(module.api_name)
         fields_meta = []
         for field in fields_meta_json:
+            if 'json_type' not in field:
+                logger.warn(f"Unsupported Zoho field {field['api_name']} found")
+                continue
             pick_list_values = field.get("pick_list_values", [])
             if pick_list_values:
                 field["pick_list_values"] = [ZohoPickListItem.from_dict(pick_list_item) for pick_list_item in field["pick_list_values"]]
