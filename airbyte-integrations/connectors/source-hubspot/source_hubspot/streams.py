@@ -852,8 +852,12 @@ class Stream(HttpStream, ABC):
         if self.catalog:
             for catalog_stream in self.catalog.streams:
                 if self.name == catalog_stream.stream.name and catalog_stream.stream.json_schema.get("properties", {}):
-                        #properties are nested field
-                        props=catalog_stream.stream.json_schema.get("properties").get("properties").get('properties')
+                    #properties are nested field 
+                    props=catalog_stream.stream.json_schema.get("properties").get("properties").get('properties')
+                elif self.name == catalog_stream.stream.name:
+                    data, response = self._api.get(f"/properties/v2/{self.entity}/properties")
+                    for row in data:
+                        props[row["name"]] = self._get_field_props(row["type"])                    
         else:
             data, response = self._api.get(f"/properties/v2/{self.entity}/properties")
             for row in data:
@@ -1215,14 +1219,24 @@ class CRMSearchStream(IncrementalStream, ABC):
                     })
             logger.warning(f"PAYLOAD: {payload}")
         
-        if self.state:
-            payload["filterGroups"].append({"filters": [{"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}]})
-        else:
-            payload["filterGroups"].append({"filters": [
-                    {"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"},
-                    {"value": int(self._init_sync.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "LTE"},
-                    {"value": last_id, "propertyName": key, "operator": "GTE"},
-                ]})
+        # if self.state:
+        #     if "filterGroups" not in payload:
+        #         payload["filterGroups"] = []
+        #     payload["filterGroups"].append({
+        #         "filters": [
+        #             {"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}
+        #         ]
+        #     })
+        # else:
+        #     if "filterGroups" not in payload:
+        #         payload["filterGroups"] = []
+        #     payload["filterGroups"].append({
+        #         "filters": [
+        #             {"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"},
+        #             {"value": int(self._init_sync.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "LTE"},
+        #             {"value": last_id, "propertyName": key, "operator": "GTE"},
+        #         ]
+        #     })
 
         if next_page_token:
             payload.update(next_page_token["payload"])
