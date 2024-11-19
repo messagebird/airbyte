@@ -1207,36 +1207,50 @@ class CRMSearchStream(IncrementalStream, ABC):
             payload["filterGroups"] = []
             for filter_group in self._stream_filter:
                 if "filters" in filter_group:
-                    payload["filterGroups"].append({
-                        "filters": [
-                            {
-                                "propertyName": filter["propertyName"],
-                                "operator": filter["operator"],
-                                "value": filter.get("value")
-                            }
-                            for filter in filter_group["filters"]
-                        ]
-                    })
-            logger.warning(f"PAYLOAD: {payload}")
-        
-        # if self.state:
-        #     if "filterGroups" not in payload:
-        #         payload["filterGroups"] = []
-        #     payload["filterGroups"].append({
-        #         "filters": [
-        #             {"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}
-        #         ]
-        #     })
-        # else:
-        #     if "filterGroups" not in payload:
-        #         payload["filterGroups"] = []
-        #     payload["filterGroups"].append({
-        #         "filters": [
-        #             {"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"},
-        #             {"value": int(self._init_sync.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "LTE"},
-        #             {"value": last_id, "propertyName": key, "operator": "GTE"},
-        #         ]
-        #     })
+                    if self.state:
+                        payload["filterGroups"].append({
+                            "filters": [
+                                {
+                                    "propertyName": filter["propertyName"],
+                                    "operator": filter["operator"],
+                                    "value": filter.get("value")
+                                }
+                                for filter in filter_group["filters"] + [
+                                    {"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"},
+                                    {"value": int(self._init_sync.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "LTE"},
+                                    {"value": last_id, "propertyName": key, "operator": "GTE"}
+                                ]
+                            ]
+                        })
+                    else:
+                        payload["filterGroups"].append({
+                            "filters": [
+                                {
+                                    "propertyName": filter["propertyName"],
+                                    "operator": filter["operator"],
+                                    "value": filter.get("value")
+                                }
+                                for filter in filter_group["filters"] + [
+                                    {"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}
+                                ]
+                            ]
+                        })
+        else:
+            payload["filterGroups"] = []
+            if self.state:
+                payload["filterGroups"].append({
+                    "filters": [
+                        {"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"},
+                        {"value": int(self._init_sync.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "LTE"},
+                        {"value": last_id, "propertyName": key, "operator": "GTE"}
+                    ]
+                })
+            else:
+                payload["filterGroups"].append({
+                    "filters": [
+                        {"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}
+                    ]
+                })
 
         if next_page_token:
             payload.update(next_page_token["payload"])
