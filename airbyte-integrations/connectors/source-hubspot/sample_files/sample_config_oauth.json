@@ -9,11 +9,64 @@
   "stream_filters": [
     {
       "stream_name": "contacts",
-      "filter_value": {
-        "propertyName": "city",
-        "operator": "EQ",
-        "value": "Madrid"
-      }
+      "filter_groups": [
+        {
+          "filters": [
+            {
+              "propertyName": "city",
+              "operator": "EQ",
+              "value": "Madrid"
+            },
+            {
+              "propertyName": "firstname",
+              "operator": "EQ",
+              "value": "Kathryne"
+            },
+            {
+              "propertyName": "email",
+              "operator": "EQ",
+              "value": "jasenschultz@paucek2.com"
+            }
+          ]
+        },
+        {
+          "filters": [
+            {
+              "propertyName": "city",
+              "operator": "EQ",
+              "value": "Warsaw"
+            },
+            {
+              "propertyName": "firstname",
+              "operator": "EQ",
+              "value": "Aga"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "stream_name": "deals",
+      "filter_groups": [
+        {
+          "filters": [
+            {
+              "propertyName": "dealstage",
+              "operator": "EQ",
+              "value": "contractsent"
+            }
+          ]
+        },
+        {
+          "filters": [
+            {
+              "propertyName": "dealname",
+              "operator": "EQ",
+              "value": "Boring tech"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
