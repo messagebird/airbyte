@@ -432,7 +432,7 @@ class Stream(HttpStream, ABC):
         if stream_filters: 
             for filter in stream_filters:
                 if filter["stream_name"] == self.name:
-                    self._stream_filter = filter["filter_value"]
+                    self._stream_filter = filter["filter_groups"]
         if catalog:
             self.catalog = catalog
 
@@ -959,6 +959,7 @@ class ClientSideIncrementalStream(Stream, CheckpointMixin):
                 yield record
 
 
+
 class AssociationsStream(Stream):
     """
     Designed to read associations of CRM objects during incremental syncs, since Search API does not support
@@ -1187,30 +1188,41 @@ class CRMSearchStream(IncrementalStream, ABC):
             key = "hs_object_id"
         payload = (
             {
-                "filters": [
-                    {"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"},
-                    {"value": int(self._init_sync.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "LTE"},
-                    {"value": last_id, "propertyName": key, "operator": "GTE"},
-                ],
                 "sorts": [{"propertyName": key, "direction": "ASCENDING"}],
                 "properties": properties_list,
                 "limit": 200,
             }
             if self.state
             else {
-                "filters": [{"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}],
                 "sorts": [{"propertyName": self.last_modified_field, "direction": "ASCENDING"}],
                 "properties": properties_list,
                 "limit": 200,
             }
         )
         if self._stream_filter:
-            if "propertyName" in self._stream_filter and "operator" in self._stream_filter and "value" in self._stream_filter:
-                payload["filters"].append({
-                    "propertyName": self._stream_filter["propertyName"],
-                    "operator": self._stream_filter["operator"],
-                    "value": self._stream_filter["value"],
-                })
+            payload["filterGroups"] = []
+            for filter_group in self._stream_filter:
+                if "filters" in filter_group:
+                    payload["filterGroups"].append({
+                        "filters": [
+                            {
+                                "propertyName": filter["propertyName"],
+                                "operator": filter["operator"],
+                                "value": filter.get("value")
+                            }
+                            for filter in filter_group["filters"]
+                        ]
+                    })
+            logger.warning(f"PAYLOAD: {payload}")
+        
+        if self.state:
+            payload["filterGroups"].append({"filters": [{"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}]})
+        else:
+            payload["filterGroups"].append({"filters": [
+                    {"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"},
+                    {"value": int(self._init_sync.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "LTE"},
+                    {"value": last_id, "propertyName": key, "operator": "GTE"},
+                ]})
 
         if next_page_token:
             payload.update(next_page_token["payload"])
@@ -1263,10 +1275,13 @@ class CRMSearchStream(IncrementalStream, ABC):
         max_last_id = None
 
         while not pagination_complete:
-            if self.state:
-                records, raw_response = self._process_search(
-                    next_page_token=next_page_token, stream_state=stream_state, stream_slice=stream_slice, last_id=max_last_id
-                )
+            records, raw_response = self._process_search(
+                next_page_token=next_page_token, 
+                stream_state=stream_state, 
+                stream_slice=stream_slice, 
+                last_id=max_last_id
+            )
+            
             if self.associations:
                 records = self._read_associations(records)
             records = self._filter_old_records(records)

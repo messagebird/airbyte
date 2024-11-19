@@ -92,8 +92,8 @@ connectionSpecification:
       type: boolean
       default: false
     stream_filters:
-      title: Filters
-      description: Filters to apply to the data streams
+      title: Filter Groups
+      description: Filter groups to limit the results. Records matching ANY of the filter groups will be returned. Within a filter group, all conditions are combined with AND.
       type: array
       items:
         type: object
@@ -101,19 +101,43 @@ connectionSpecification:
           stream_name:
             type: string
             title: Stream Name
-          filter_value:
-            type: object
-            title: Filter expression
-            properties:
-              propertyName:
-                type: string
-                title: Property Name
-              operator:
-                type: string
-                title: Operator
-              value:
-                type: string
-                title: Value
+            description: Name of the stream to apply filters to
+          filter_groups:
+            type: array
+            title: Filter Groups
+            description: Groups of filters. Records matching ANY of these groups will be returned.
+            items:
+              type: object
+              properties:
+                filters:
+                  type: array
+                  title: Filters
+                  description: List of filters that will be combined with AND logic
+                  items:
+                    type: object
+                    required:
+                      - propertyName
+                      - operator
+                    properties:
+                      propertyName:
+                        type: string
+                        title: Property Name
+                        description: The name of the property to filter on
+                      operator:
+                        type: string
+                        title: Operator
+                        description: The operator to use for filtering
+                        enum:
+                          - EQ
+                          - NEQ
+                          - LT
+                          - LTE
+                          - GT
+                          - GTE
+                      value:
+                        type: string
+                        title: Value
+                        description: The value to compare against.
 advanced_auth:
   auth_flow_type: oauth2.0
   predicate_key:

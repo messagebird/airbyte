@@ -296,7 +296,7 @@
                     "string"
                   ]
                 },
-                "lastmodifieddate": {
+                "hs_lastmodifieddate": {
                   "format": "date-time",
                   "type": [
                     "null",
