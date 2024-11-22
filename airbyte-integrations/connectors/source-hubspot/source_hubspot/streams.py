@@ -401,12 +401,16 @@ class Stream(HttpStream, ABC):
         api: API,
         start_date: Union[str, pendulum.datetime],
         credentials: Mapping[str, Any] = None,
+        stream_filters: Mapping[str, Any] = None,
+        catalog: Mapping[str, Any] = None,
         acceptance_test_config: Mapping[str, Any] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self._api: API = api
         self._credentials = credentials
+        self._stream_filter = None
+        self.catalog = None
 
         self._start_date = start_date
         if isinstance(self._start_date, str):
@@ -423,6 +427,14 @@ class Stream(HttpStream, ABC):
             acceptance_test_config = {}
         self._is_test = self.name in acceptance_test_config
         self._acceptance_test_config = acceptance_test_config.get(self.name, {})
+
+        # Filter for records
+        if stream_filters: 
+            for filter in stream_filters:
+                if filter["stream_name"] == self.name:
+                    self._stream_filter = filter["filter_groups"]
+        if catalog:
+            self.catalog = catalog
 
     def should_retry(self, response: requests.Response) -> bool:
         if response.status_code == HTTPStatus.UNAUTHORIZED:
@@ -836,10 +848,20 @@ class Stream(HttpStream, ABC):
                 f"to be able to fetch all properties available."
             )
             return props
-        data, response = self._api.get(f"/properties/v2/{self.entity}/properties")
-        for row in data:
-            props[row["name"]] = self._get_field_props(row["type"])
 
+        if self.catalog:
+            for catalog_stream in self.catalog.streams:
+                if self.name == catalog_stream.stream.name and catalog_stream.stream.json_schema.get("properties", {}):
+                    #properties are nested field 
+                    props=catalog_stream.stream.json_schema.get("properties").get("properties").get('properties')
+                elif self.name == catalog_stream.stream.name:
+                    data, response = self._api.get(f"/properties/v2/{self.entity}/properties")
+                    for row in data:
+                        props[row["name"]] = self._get_field_props(row["type"])                    
+        else:
+            data, response = self._api.get(f"/properties/v2/{self.entity}/properties")
+            for row in data:
+                props[row["name"]] = self._get_field_props(row["type"])
         if self._transformations:
             for transformation in self._transformations:
                 transformation.transform(record_or_schema=props)
@@ -939,6 +961,7 @@ class ClientSideIncrementalStream(Stream, CheckpointMixin):
         for record in super().read_records(sync_mode, cursor_field, stream_slice, stream_state):
             if self.filter_by_state(stream_state=stream_state, record=record):
                 yield record
+
 
 
 class AssociationsStream(Stream):
@@ -1123,7 +1146,7 @@ class CRMSearchStream(IncrementalStream, ABC):
     @property
     def url(self):
         object_type_id = self.fully_qualified_name or self.entity
-        return f"/crm/v3/objects/{object_type_id}/search" if self.state else f"/crm/v3/objects/{object_type_id}"
+        return f"/crm/v3/objects/{object_type_id}/search"
 
     def __init__(
         self,
@@ -1169,18 +1192,66 @@ class CRMSearchStream(IncrementalStream, ABC):
             key = "hs_object_id"
         payload = (
             {
-                "filters": [
-                    {"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"},
-                    {"value": int(self._init_sync.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "LTE"},
-                    {"value": last_id, "propertyName": key, "operator": "GTE"},
-                ],
                 "sorts": [{"propertyName": key, "direction": "ASCENDING"}],
                 "properties": properties_list,
-                "limit": 100,
+                "limit": 200,
             }
             if self.state
-            else {}
+            else {
+                "sorts": [{"propertyName": key, "direction": "ASCENDING"}],
+                "properties": properties_list,
+                "limit": 200,
+            }
         )
+        if self._stream_filter:
+            payload["filterGroups"] = []
+            for filter_group in self._stream_filter:
+                if "filters" in filter_group:
+                    if self.state:
+                        payload["filterGroups"].append({
+                            "filters": [
+                                {
+                                    "propertyName": filter["propertyName"],
+                                    "operator": filter["operator"],
+                                    "value": filter.get("value")
+                                }
+                                for filter in filter_group["filters"] + [
+                                    {"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"},
+                                    {"value": int(self._init_sync.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "LTE"},
+                                    {"value": last_id, "propertyName": key, "operator": "GTE"}
+                                ]
+                            ]
+                        })
+                    else:
+                        payload["filterGroups"].append({
+                            "filters": [
+                                {
+                                    "propertyName": filter["propertyName"],
+                                    "operator": filter["operator"],
+                                    "value": filter.get("value")
+                                }
+                                for filter in filter_group["filters"] + [
+                                    {"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}
+                                ]
+                            ]
+                        })
+        else:
+            payload["filterGroups"] = []
+            if self.state:
+                payload["filterGroups"].append({
+                    "filters": [
+                        {"value": int(self._state.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"},
+                        {"value": int(self._init_sync.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "LTE"},
+                        {"value": last_id, "propertyName": key, "operator": "GTE"}
+                    ]
+                })
+            else:
+                payload["filterGroups"].append({
+                    "filters": [
+                        {"value": int(self._start_date.timestamp() * 1000), "propertyName": self.last_modified_field, "operator": "GTE"}
+                    ]
+                })
+
         if next_page_token:
             payload.update(next_page_token["payload"])
 
@@ -1232,19 +1303,15 @@ class CRMSearchStream(IncrementalStream, ABC):
         max_last_id = None
 
         while not pagination_complete:
-            if self.state:
-                records, raw_response = self._process_search(
-                    next_page_token=next_page_token, stream_state=stream_state, stream_slice=stream_slice, last_id=max_last_id
-                )
-                if self.associations:
-                    records = self._read_associations(records)
-            else:
-                records, raw_response = self._read_stream_records(
-                    stream_slice=stream_slice,
-                    stream_state=stream_state,
-                    next_page_token=next_page_token,
-                )
-                records = self._flat_associations(records)
+            records, raw_response = self._process_search(
+                next_page_token=next_page_token, 
+                stream_state=stream_state, 
+                stream_slice=stream_slice, 
+                last_id=max_last_id
+            )
+            
+            if self.associations:
+                records = self._read_associations(records)
             records = self._filter_old_records(records)
             records = self.record_unnester.unnest(records)
 
@@ -1255,7 +1322,7 @@ class CRMSearchStream(IncrementalStream, ABC):
             next_page_token = self.next_page_token(raw_response)
             if not next_page_token:
                 pagination_complete = True
-            elif self.state and next_page_token["payload"]["after"] >= 10000:
+            elif next_page_token["payload"]["after"] >= 10000:
                 # Hubspot documentation states that the search endpoints are limited to 10,000 total results
                 # for any given query. Attempting to page beyond 10,000 will result in a 400 error.
                 # https://developers.hubspot.com/docs/api/crm/search. We stop getting data at 10,000 and
