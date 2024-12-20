@@ -36,7 +36,7 @@ streams:
         http_method: GET
         request_parameters:
           _sort: +last_modified_dts
-          _expand: billing
+          _expand: billing,privacy
         request_headers:
           User-Agent: PostmanRuntime/7.42.0
           X-UltraCart-Api-Version: '2017-03-01'
@@ -62,7 +62,7 @@ streams:
           inject_into: request_parameter
         pagination_strategy:
           type: OffsetIncrement
-          page_size: 2
+          page_size: 200
     incremental_sync:
       type: DatetimeBasedCursor
       cursor_field: last_modified_dts
